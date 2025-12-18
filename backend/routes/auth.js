@@ -4,53 +4,55 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 // Register
-router.post('/register', async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { name, email, password } = req.body;
 
+    // ✅ 1. Validate input
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+
+    // ✅ 2. Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({ message: "Email already registered" });
     }
 
-    const user = new User({ email, password, name });
+    // ✅ 3. Create user
+    const user = new User({ name, email, password });
     await user.save();
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    // ✅ 4. Protect JWT creation
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ message: "JWT_SECRET not configured" });
+    }
 
-    res.status(201).json({ 
-      token, 
-      user: { id: user._id, email: user.email, name: user.name } 
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(201).json({
+      message: "Registration successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("REGISTER ERROR:", error);
+    return res.status(500).json({ message: error.message });
   }
 });
 
-// Login
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-    res.json({ 
-      token, 
-      user: { id: user._id, email: user.email, name: user.name } 
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
 module.exports = router;
