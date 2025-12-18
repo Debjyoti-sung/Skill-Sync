@@ -1,8 +1,19 @@
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
 const app = express();
+
+// ==================
+// MongoDB Connection
+// ==================
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/skillsync', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('📦 MongoDB Connected'))
+.catch(err => console.error('❌ MongoDB connection error:', err));
 
 // ==================
 // Middleware
@@ -14,7 +25,10 @@ app.use(express.urlencoded({ extended: true }));
 // CORS Configuration
 // ==================
 const corsOptions = {
-  origin: "https://skill-sync-1.vercel.app",
+  origin: [
+    "https://skill-sync-1.vercel.app",
+    "http://localhost:3000"
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
@@ -39,6 +53,7 @@ app.get("/", (req, res) => {
     status: "OK", 
     message: "SkillSync API is running",
     version: "1.0.0",
+    timestamp: new Date().toISOString(),
     endpoints: {
       auth: "/api/auth",
       skills: "/api/skills",
@@ -50,9 +65,11 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/health", (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
   res.json({ 
     status: "OK", 
     message: "SkillSync API is running",
+    database: dbStatus,
     timestamp: new Date().toISOString()
   });
 });
@@ -81,4 +98,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 SkillSync server running on port ${PORT}`);
   console.log(`🌐 CORS enabled for: https://skill-sync-1.vercel.app`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
