@@ -10,18 +10,17 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ FINAL CORRECT CORS CONFIG (IMPORTANT)
-app.use(
-  cors({
-    origin: "*", // allow all origins
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-    // ❌ DO NOT add credentials:true with "*"
-  })
-);
+// ==================
+// CORS Configuration
+// ==================
+const corsOptions = {
+  origin: "https://skill-sync-1.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+};
 
-// Handle preflight requests
-app.options("*", cors());
+app.use(cors(corsOptions));
 
 // ==================
 // Routes
@@ -33,16 +32,53 @@ app.use("/api/career", require("./routes/career"));
 app.use("/api/tasks", require("./routes/tasks"));
 
 // ==================
-// Health check
+// Health Check
 // ==================
+app.get("/", (req, res) => {
+  res.json({ 
+    status: "OK", 
+    message: "SkillSync API is running",
+    version: "1.0.0",
+    endpoints: {
+      auth: "/api/auth",
+      skills: "/api/skills",
+      retention: "/api/retention",
+      career: "/api/career",
+      tasks: "/api/tasks"
+    }
+  });
+});
+
 app.get("/api/health", (req, res) => {
-  res.json({ status: "OK", message: "SkillSync API is running" });
+  res.json({ 
+    status: "OK", 
+    message: "SkillSync API is running",
+    timestamp: new Date().toISOString()
+  });
 });
 
 // ==================
-// Server
+// Error Handling
+// ==================
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: "Route not found",
+    path: req.path 
+  });
+});
+
+app.use((err, req, res, next) => {
+  console.error("Error:", err);
+  res.status(err.status || 500).json({ 
+    error: err.message || "Internal server error"
+  });
+});
+
+// ==================
+// Start Server
 // ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 SkillSync server running on port ${PORT}`);
+  console.log(`🌐 CORS enabled for: https://skill-sync-1.vercel.app`);
 });
