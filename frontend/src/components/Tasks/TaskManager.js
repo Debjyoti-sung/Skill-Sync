@@ -20,7 +20,7 @@ function TaskManager({ user }) {
   const loadTasks = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/tasks/user/${user.id}`, {
+      const response = await axios.get(`http://https://skill-sync-bl6v.onrender.com//api/tasks/user/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTasks(response.data);
@@ -33,7 +33,7 @@ function TaskManager({ user }) {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/tasks/create', 
+      await axios.post('http://https://skill-sync-bl6v.onrender.com//api/tasks/create', 
         { ...newTask, userId: user.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -49,7 +49,7 @@ function TaskManager({ user }) {
   const completeTask = async (taskId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:5000/api/tasks/update/${taskId}`,
+      await axios.patch(`http://https://skill-sync-bl6v.onrender.com//api/tasks/update/${taskId}`,
         { status: 'completed' },
         { headers: { Authorization: `Bearer ${token}` } }
       );

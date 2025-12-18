@@ -21,7 +21,7 @@ function Dashboard({ user }) {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      const tasksResponse = await axios.get(`http://localhost:5000/api/tasks/user/${user.id}`, config);
+      const tasksResponse = await axios.get(`http://https://skill-sync-bl6v.onrender.com//api/tasks/user/${user.id}`, config);
 
       setTodayTasks(tasksResponse.data.todayTasks || []);
       setTomorrowTasks(tasksResponse.data.tomorrowTasks || []);

@@ -15,7 +15,7 @@ function RetentionTracker({ user }) {
   const loadDueItems = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/retention/due/${user.id}`, {
+      const response = await axios.get(`http://https://skill-sync-bl6v.onrender.com//api/retention/due/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setItems(response.data);
@@ -28,7 +28,7 @@ function RetentionTracker({ user }) {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/retention/add',
+      await axios.post('http://https://skill-sync-bl6v.onrender.com//api/retention/add',
         { ...newItem, userId: user.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -46,7 +46,7 @@ function RetentionTracker({ user }) {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:5000/api/retention/review/${currentReview._id}`,
+      await axios.post(`http://https://skill-sync-bl6v.onrender.com//api/retention/review/${currentReview._id}`,
         { quality },
         { headers: { Authorization: `Bearer ${token}` } }
       );

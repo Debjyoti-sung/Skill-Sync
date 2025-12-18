@@ -13,7 +13,7 @@ function CareerNavigator({ user }) {
   const loadCareerPaths = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/career/paths/${user.id}`, {
+      const response = await axios.get(`http://https://skill-sync-bl6v.onrender.com//api/career/paths/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCareerPaths(response.data.paths);
