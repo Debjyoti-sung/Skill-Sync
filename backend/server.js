@@ -10,13 +10,13 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Correct CORS configuration
+// ✅ FINAL CORRECT CORS CONFIG (IMPORTANT)
 app.use(
   cors({
-    origin: "*",
+    origin: "*", // allow all origins
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"]
+    // ❌ DO NOT add credentials:true with "*"
   })
 );
 
