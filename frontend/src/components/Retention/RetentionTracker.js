@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './RetentionTracker.css';
 
@@ -8,27 +8,27 @@ function RetentionTracker({ user }) {
   const [newItem, setNewItem] = useState({ content: '', skill: '' });
   const [currentReview, setCurrentReview] = useState(null);
 
-  useEffect(() => {
-    loadDueItems();
-  }, [user]);
-
-  const loadDueItems = async () => {
+  const loadDueItems = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://https://skill-sync-bl6v.onrender.com//api/retention/due/${user.id}`, {
+      const response = await axios.get(`https://skill-sync-bl6v.onrender.com/api/retention/due/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setItems(response.data);
     } catch (error) {
       console.error('Error loading items:', error);
     }
-  };
+  }, [user.id]);
+
+  useEffect(() => {
+    loadDueItems();
+  }, [loadDueItems]);
 
   const addItem = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://https://skill-sync-bl6v.onrender.com//api/retention/add',
+      await axios.post('https://skill-sync-bl6v.onrender.com/api/retention/add',
         { ...newItem, userId: user.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -46,7 +46,7 @@ function RetentionTracker({ user }) {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`http://https://skill-sync-bl6v.onrender.com//api/retention/review/${currentReview._id}`,
+      await axios.post(`https://skill-sync-bl6v.onrender.com/api/retention/review/${currentReview._id}`,
         { quality },
         { headers: { Authorization: `Bearer ${token}` } }
       );

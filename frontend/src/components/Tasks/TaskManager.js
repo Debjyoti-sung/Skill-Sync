@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { format } from 'date-fns';
 import './TaskManager.css';
 
 function TaskManager({ user }) {
@@ -13,27 +12,27 @@ function TaskManager({ user }) {
     priority: 'medium'
   });
 
-  useEffect(() => {
-    loadTasks();
-  }, [user]);
-
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://https://skill-sync-bl6v.onrender.com//api/tasks/user/${user.id}`, {
+      const response = await axios.get(`https://skill-sync-bl6v.onrender.com/api/tasks/user/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTasks(response.data);
     } catch (error) {
       console.error('Error loading tasks:', error);
     }
-  };
+  }, [user.id]);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
 
   const createTask = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://https://skill-sync-bl6v.onrender.com//api/tasks/create', 
+      await axios.post('https://skill-sync-bl6v.onrender.com/api/tasks/create', 
         { ...newTask, userId: user.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -49,7 +48,7 @@ function TaskManager({ user }) {
   const completeTask = async (taskId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://https://skill-sync-bl6v.onrender.com//api/tasks/update/${taskId}`,
+      await axios.patch(`https://skill-sync-bl6v.onrender.com/api/tasks/update/${taskId}`,
         { status: 'completed' },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import './GoalSetup.css';
 
 const GoalSetup = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const { goalType } = location.state || {};
 

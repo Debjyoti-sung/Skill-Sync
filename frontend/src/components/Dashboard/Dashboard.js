@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import './Dashboard.css';
 
-function Dashboard({ user }) {
+function Dashboard() {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [stats, setStats] = useState({
     skills: 0,
     retentionItems: 0,
@@ -12,16 +13,12 @@ function Dashboard({ user }) {
   const [todayTasks, setTodayTasks] = useState([]);
   const [tomorrowTasks, setTomorrowTasks] = useState([]);
 
-  useEffect(() => {
-    loadDashboard();
-  }, [user]);
-
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      const tasksResponse = await axios.get(`http://https://skill-sync-bl6v.onrender.com//api/tasks/user/${user.id}`, config);
+      const tasksResponse = await axios.get(`https://skill-sync-bl6v.onrender.com/api/tasks/user/${user.id}`, config);
 
       setTodayTasks(tasksResponse.data.todayTasks || []);
       setTomorrowTasks(tasksResponse.data.tomorrowTasks || []);
@@ -35,7 +32,11 @@ function Dashboard({ user }) {
     } catch (error) {
       console.error('Error loading dashboard:', error);
     }
-  };
+  }, [user.id]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   return (
     <div className="container">

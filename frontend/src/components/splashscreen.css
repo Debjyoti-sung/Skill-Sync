@@ -1,0 +1,145 @@
+/* SplashScreen.css */
+.splash-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  overflow: hidden;
+  position: relative;
+}
+
+.splash-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: moveBackground 20s linear infinite;
+}
+
+@keyframes moveBackground {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(50px, 50px);
+  }
+}
+
+.splash-content {
+  text-align: center;
+  z-index: 1;
+}
+
+.logo-animation {
+  margin-bottom: 40px;
+}
+
+.brand-name {
+  font-size: 4rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 2px;
+  animation: fadeInScale 1s ease-out;
+}
+
+.skill {
+  color: #ffffff;
+  display: inline-block;
+  animation: slideInLeft 1s ease-out;
+}
+
+.sync {
+  color: #ffd700;
+  display: inline-block;
+  animation: slideInRight 1s ease-out;
+}
+
+.tagline {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 10px;
+  animation: fadeIn 1.5s ease-out;
+  letter-spacing: 1px;
+}
+
+.loading-bar {
+  width: 300px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.loading-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd700, #ffffff);
+  border-radius: 2px;
+  animation: loadingAnimation 5s ease-in-out;
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes loadingAnimation {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .brand-name {
+    font-size: 3rem;
+  }
+  .tagline {
+    font-size: 1rem;
+  }
+}

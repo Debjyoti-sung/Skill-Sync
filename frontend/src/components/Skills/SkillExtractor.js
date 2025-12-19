@@ -12,7 +12,7 @@ function SkillExtractor({ user }) {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://https://skill-sync-bl6v.onrender.com//api/skills/extract', { text });
+      const response = await axios.post('https://skill-sync-bl6v.onrender.com/api/skills/extract', { text });
       setExtractedSkills(response.data.skills);
     } catch (error) {
       console.error('Error extracting skills:', error);
@@ -22,7 +22,7 @@ function SkillExtractor({ user }) {
 
   const addSkill = async (skill) => {
     try {
-      await axios.post('http://https://skill-sync-bl6v.onrender.com//api/skills/add', {
+      await axios.post('https://skill-sync-bl6v.onrender.com/api/skills/add', {
         userId: user.id,
         skill,
         relatedSkills: extractedSkills.filter(s => s !== skill).slice(0, 3)

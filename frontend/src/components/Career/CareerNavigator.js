@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './CareerNavigator.css';
 
@@ -6,14 +6,10 @@ function CareerNavigator({ user }) {
   const [careerPaths, setCareerPaths] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadCareerPaths();
-  }, [user]);
-
-  const loadCareerPaths = async () => {
+  const loadCareerPaths = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://https://skill-sync-bl6v.onrender.com//api/career/paths/${user.id}`, {
+      const response = await axios.get(`https://skill-sync-bl6v.onrender.com/api/career/paths/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCareerPaths(response.data.paths);
@@ -22,7 +18,11 @@ function CareerNavigator({ user }) {
       console.error('Error loading career paths:', error);
       setLoading(false);
     }
-  };
+  }, [user.id]);
+
+  useEffect(() => {
+    loadCareerPaths();
+  }, [loadCareerPaths]);
 
   return (
     <div className="container">
