@@ -1,82 +1,98 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Task = require('../models/Task');
+const fs = require("fs");
+const path = require("path");
+const authMiddleware = require("../middleware/auth");
 
-// Create task
-router.post('/create', async (req, res) => {
+const dataPath = path.join(__dirname, "../data/tasks.json");
+
+const readTasks = () => {
   try {
-    const { userId, title, description, dueDate, priority, skills } = req.body;
+    const data = fs.readFileSync(dataPath, "utf8");
+    return JSON.parse(data);
+  } catch (error) {
+    return [];
+  }
+};
 
-    const task = new Task({
-      userId,
+const writeTasks = (tasks) => {
+  fs.writeFileSync(dataPath, JSON.stringify(tasks, null, 2));
+};
+
+const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
+// Get all tasks
+router.get("/", authMiddleware, (req, res) => {
+  try {
+    const tasks = readTasks();
+    const userTasks = tasks.filter(t => t.userId === req.userId);
+    res.json(userTasks);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch tasks" });
+  }
+});
+
+// Add task
+router.post("/", authMiddleware, (req, res) => {
+  try {
+    const { title, description, dueDate, priority } = req.body;
+
+    const tasks = readTasks();
+    const newTask = {
+      id: generateId(),
+      userId: req.userId,
       title,
       description,
-      dueDate: new Date(dueDate),
-      priority,
-      skills
-    });
+      dueDate,
+      priority: priority || "medium",
+      completed: false,
+      createdAt: new Date().toISOString()
+    };
 
-    await task.save();
-    res.status(201).json(task);
+    tasks.push(newTask);
+    writeTasks(tasks);
+
+    res.status(201).json(newTask);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to add task" });
   }
 });
 
-// Get tasks including tomorrow's tasks
-router.get('/user/:userId', async (req, res) => {
+// Update task
+router.patch("/:id", authMiddleware, (req, res) => {
   try {
-    const { userId } = req.params;
+    const tasks = readTasks();
+    const index = tasks.findIndex(t => 
+      t.id === req.params.id && t.userId === req.userId
+    );
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    if (index === -1) {
+      return res.status(404).json({ error: "Task not found" });
+    }
 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 2); // Include tomorrow
+    tasks[index] = { ...tasks[index], ...req.body };
+    writeTasks(tasks);
 
-    const tasks = await Task.find({
-      userId,
-      dueDate: { $lt: tomorrow },
-      status: 'pending'
-    }).sort({ dueDate: 1, priority: -1 });
-
-    // Separate today and tomorrow tasks
-    const todayEnd = new Date(today);
-    todayEnd.setDate(todayEnd.getDate() + 1);
-
-    const todayTasks = tasks.filter(t => t.dueDate < todayEnd);
-    const tomorrowTasks = tasks.filter(t => t.dueDate >= todayEnd);
-
-    res.json({ 
-      todayTasks, 
-      tomorrowTasks,
-      allTasks: tasks 
-    });
+    res.json(tasks[index]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Update task status
-router.patch('/update/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-
-    const task = await Task.findByIdAndUpdate(id, updates, { new: true });
-    res.json(task);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to update task" });
   }
 });
 
 // Delete task
-router.delete('/delete/:id', async (req, res) => {
+router.delete("/:id", authMiddleware, (req, res) => {
   try {
-    await Task.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Task deleted successfully' });
+    const tasks = readTasks();
+    const filtered = tasks.filter(t => 
+      !(t.id === req.params.id && t.userId === req.userId)
+    );
+
+    writeTasks(filtered);
+    res.json({ message: "Task deleted" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to delete task" });
   }
 });
 

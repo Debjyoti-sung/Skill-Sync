@@ -1,58 +1,124 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const fs = require("fs");
+const path = require("path");
+
+const dataPath = path.join(__dirname, "../data/users.json");
+
+// Helper functions
+const readUsers = () => {
+  try {
+    const data = fs.readFileSync(dataPath, "utf8");
+    return JSON.parse(data);
+  } catch (error) {
+    return [];
+  }
+};
+
+const writeUsers = (users) => {
+  fs.writeFileSync(dataPath, JSON.stringify(users, null, 2));
+};
+
+const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
 
 // Register
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // ✅ 1. Validate input
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ error: "All fields are required" });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
-    }
+    const users = readUsers();
 
-    // ✅ 2. Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // Check if user exists
+    const existingUser = users.find(u => u.email === email);
     if (existingUser) {
-      return res.status(400).json({ message: "Email already registered" });
+      return res.status(400).json({ error: "User already exists" });
     }
 
-    // ✅ 3. Create user
-    const user = new User({ name, email, password });
-    await user.save();
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ 4. Protect JWT creation
-    if (!process.env.JWT_SECRET) {
-      return res.status(500).json({ message: "JWT_SECRET not configured" });
-    }
+    // Create new user
+    const newUser = {
+      id: generateId(),
+      name,
+      email,
+      password: hashedPassword,
+      createdAt: new Date().toISOString()
+    };
 
+    users.push(newUser);
+    writeUsers(users);
+
+    // Generate token
     const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
+      { id: newUser.id, email: newUser.email },
+      process.env.JWT_SECRET || "skillsync_secret_123",
       { expiresIn: "7d" }
     );
 
-    return res.status(201).json({
-      message: "Registration successful",
+    res.status(201).json({
       token,
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email
+      }
     });
-
   } catch (error) {
-    console.error("REGISTER ERROR:", error);
-    return res.status(500).json({ message: error.message });
+    console.error("Registration error:", error);
+    res.status(500).json({ error: "Registration failed" });
   }
 });
 
+// Login
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    const users = readUsers();
+    const user = users.find(u => u.email === email);
+
+    if (!user) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    // Generate token
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET || "skillsync_secret_123",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Login failed" });
+  }
+});
 
 module.exports = router;

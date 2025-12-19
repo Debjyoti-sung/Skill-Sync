@@ -1,100 +1,77 @@
-const express = require('express');
+
+backend-routes-skills.js
+const express = require("express");
 const router = express.Router();
-const natural = require('natural');
-const compromise = require('compromise');
-const { getSession } = require('../config/neo4j');
+const fs = require("fs");
+const path = require("path");
+const authMiddleware = require("../middleware/auth");
 
-// NLP Skill Extraction
-router.post('/extract', async (req, res) => {
+const dataPath = path.join(__dirname, "../data/skills.json");
+
+const readSkills = () => {
   try {
-    const { text } = req.body;
-
-    // Extract skills using NLP
-    const doc = compromise(text);
-
-    // Extract technical terms and nouns as potential skills
-    const nouns = doc.nouns().out('array');
-    const skills = [];
-
-    // Common tech skills dictionary
-    const techSkills = [
-      'javascript', 'python', 'java', 'react', 'node', 'nodejs', 'express',
-      'mongodb', 'sql', 'html', 'css', 'git', 'docker', 'kubernetes',
-      'machine learning', 'ai', 'data science', 'algorithm', 'database',
-      'api', 'rest', 'graphql', 'typescript', 'vue', 'angular'
-    ];
-
-    // Check for tech skills in text
-    const lowerText = text.toLowerCase();
-    techSkills.forEach(skill => {
-      if (lowerText.includes(skill)) {
-        skills.push(skill);
-      }
-    });
-
-    // Add relevant nouns
-    nouns.forEach(noun => {
-      if (noun.length > 3 && !skills.includes(noun.toLowerCase())) {
-        skills.push(noun.toLowerCase());
-      }
-    });
-
-    res.json({ skills: [...new Set(skills)].slice(0, 10) });
+    const data = fs.readFileSync(dataPath, "utf8");
+    return JSON.parse(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return [];
+  }
+};
+
+const writeSkills = (skills) => {
+  fs.writeFileSync(dataPath, JSON.stringify(skills, null, 2));
+};
+
+const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
+// Get all skills for user
+router.get("/", authMiddleware, (req, res) => {
+  try {
+    const skills = readSkills();
+    const userSkills = skills.filter(s => s.userId === req.userId);
+    res.json(userSkills);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch skills" });
   }
 });
 
-// Add skill to user's graph
-router.post('/add', async (req, res) => {
-  const session = getSession();
+// Add skill
+router.post("/", authMiddleware, (req, res) => {
   try {
-    const { userId, skill, relatedSkills = [] } = req.body;
+    const { name, category, proficiency } = req.body;
 
-    // Create skill node and relationships in Neo4j
-    await session.run(
-      `MERGE (u:User {id: $userId})
-       MERGE (s:Skill {name: $skill})
-       MERGE (u)-[:KNOWS]->(s)
-       WITH s
-       UNWIND $relatedSkills AS related
-       MERGE (rs:Skill {name: related})
-       MERGE (s)-[:RELATED_TO]->(rs)
-       RETURN s`,
-      { userId, skill, relatedSkills }
-    );
+    const skills = readSkills();
+    const newSkill = {
+      id: generateId(),
+      userId: req.userId,
+      name,
+      category,
+      proficiency: proficiency || "beginner",
+      createdAt: new Date().toISOString()
+    };
 
-    res.json({ message: 'Skill added successfully', skill });
+    skills.push(newSkill);
+    writeSkills(skills);
+
+    res.status(201).json(newSkill);
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  } finally {
-    await session.close();
+    res.status(500).json({ error: "Failed to add skill" });
   }
 });
 
-// Get user's skill graph
-router.get('/graph/:userId', async (req, res) => {
-  const session = getSession();
+// Delete skill
+router.delete("/:id", authMiddleware, (req, res) => {
   try {
-    const { userId } = req.params;
-
-    const result = await session.run(
-      `MATCH (u:User {id: $userId})-[:KNOWS]->(s:Skill)
-       OPTIONAL MATCH (s)-[:RELATED_TO]->(rs:Skill)
-       RETURN s.name AS skill, collect(rs.name) AS relatedSkills`,
-      { userId }
+    const skills = readSkills();
+    const filtered = skills.filter(s => 
+      !(s.id === req.params.id && s.userId === req.userId)
     );
 
-    const skills = result.records.map(record => ({
-      skill: record.get('skill'),
-      relatedSkills: record.get('relatedSkills').filter(s => s !== null)
-    }));
-
-    res.json({ skills });
+    writeSkills(filtered);
+    res.json({ message: "Skill deleted" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  } finally {
-    await session.close();
+    res.status(500).json({ error: "Failed to delete skill" });
   }
 });
 
