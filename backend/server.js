@@ -29,6 +29,7 @@ initFile("skills.json");
 initFile("retention.json");
 initFile("career.json");
 initFile("tasks.json");
+initFile("goals.json");  // NEW: Goals storage
 
 console.log("✅ JSON storage initialized");
 
@@ -61,6 +62,7 @@ app.use("/api/skills", require("./routes/skills"));
 app.use("/api/retention", require("./routes/retention"));
 app.use("/api/career", require("./routes/career"));
 app.use("/api/tasks", require("./routes/tasks"));
+app.use("/api/goals", require("./routes/goals"));  // NEW: Goals route
 
 // ==================
 // Health Check
@@ -76,7 +78,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/health", (req, res) => {
-  const dataFiles = ["users.json", "skills.json", "retention.json", "career.json", "tasks.json"];
+  const dataFiles = ["users.json", "skills.json", "retention.json", "career.json", "tasks.json", "goals.json"];
   const filesExist = dataFiles.every(file => 
     fs.existsSync(path.join(dataDir, file))
   );
